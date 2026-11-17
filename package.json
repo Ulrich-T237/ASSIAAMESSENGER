@@ -1,0 +1,17 @@
+{
+  "name": "assiaa-messenger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ASSIAA — AGC assistant on the Facebook Page (Messenger channel). Same brain as the WhatsApp and web versions.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node scripts/test-messenger.js",
+    "simulate": "node scripts/simulate.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@google/genai": "2.32.0",
+    "dotenv": "18.0.9"
+  }
+}
