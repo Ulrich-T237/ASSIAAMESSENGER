@@ -10,7 +10,7 @@ const crypto = require('crypto')
 const cfg = require('./config')
 const pipeline = require('./pipeline')
 const sessions = require('./session')
-const { detectLang } = require('./lang')
+const { detectLang, isGreeting } = require('./lang')
 
 /* ------------------------------------------------------------------ logging */
 
@@ -307,29 +307,40 @@ async function handleEvent(event) {
 
   // First contact: greet in the visitor's own language if we can tell it.
   const isFirst = !sessions.get(psid)
-  const firstLang = detectLang(text, 'fr')
-  const result = isFirst ? pipeline.start(psid, firstLang) : await pipeline.handle(psid, text)
+  const greetingOnly = isGreeting(text).yes || !text.trim()
 
+  if (isFirst) {
+    const firstLang = detectLang(text, 'fr')
+    const started = pipeline.start(psid, firstLang)
+    await typingOn(psid)
+    await deliver(psid, started.replies, greetingOnly ? menuQuickReplies(started.lang) : undefined)
+    // A visitor whose very first message is "devis" must not just get the menu.
+    if (greetingOnly) return 'greeting'
+  }
+
+  const result = await pipeline.handle(psid, text)
   await typingOn(psid)
+  await deliver(psid, result.replies || [], undefined)
+  return result.acted || 'answered'
+}
 
-  const replies = result.replies || []
+/** Send a bundle of replies, optionally attaching quick replies to the very last bubble. */
+async function deliver(psid, replies, quick) {
   for (let i = 0; i < replies.length; i++) {
-    const isLast = i === replies.length - 1
-    const quick = isFirst && isLast ? menuQuickReplies(result.lang) : undefined
-    if (quick) {
+    const withQuick = quick && i === replies.length - 1 ? quick : undefined
+    if (withQuick) {
       const chunks = splitMessage(replies[i])
       for (let c = 0; c < chunks.length; c++) {
         const last = c === chunks.length - 1
         await sender(psid, {
-          message: last ? { text: chunks[c], quick_replies: quick } : { text: chunks[c] },
+          message: last ? { text: chunks[c], quick_replies: withQuick } : { text: chunks[c] },
         })
       }
     } else {
       await sendText(psid, replies[i])
     }
   }
-
-  return result.acted || 'answered'
+  return replies.length
 }
 
 function sessionLang(psid) {

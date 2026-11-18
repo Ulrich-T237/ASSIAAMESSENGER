@@ -19,8 +19,8 @@ const WHATSAPP_NUMBER = (process.env.WHATSAPP_NUMBER || '237683708003').replace(
 module.exports = {
   PORT: parseInt(process.env.PORT || '10000', 10),
 
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-  GEMINI_MODEL: process.env.GEMINI_MODEL || MODEL_DEFAULT,
+  GEMINI_API_KEY: (process.env.GEMINI_API_KEY || '').trim(),
+  GEMINI_MODEL: (process.env.GEMINI_MODEL || MODEL_DEFAULT).trim(),
   GEMINI_MODEL_FALLBACKS: (process.env.GEMINI_MODEL_FALLBACKS || FALLBACKS_DEFAULT)
     .split(',')
     .map((s) => s.trim())
@@ -46,15 +46,15 @@ module.exports = {
 
   /* ------------------------------------------------------ Messenger (Meta) */
   // Graph API version — bump if Meta returns "unknown version".
-  GRAPH_VERSION: process.env.GRAPH_VERSION || 'v24.0',
+  GRAPH_VERSION: (process.env.GRAPH_VERSION || 'v24.0').trim(),
   GRAPH_BASE: process.env.GRAPH_BASE || 'https://graph.facebook.com',
 
-  FB_APP_ID: process.env.FB_APP_ID || '',
-  FB_APP_SECRET: process.env.FB_APP_SECRET || '',
-  PAGE_ACCESS_TOKEN: process.env.PAGE_ACCESS_TOKEN || '',
-  PAGE_ID: process.env.PAGE_ID || '',
+  FB_APP_ID: (process.env.FB_APP_ID || '').trim(),
+  FB_APP_SECRET: (process.env.FB_APP_SECRET || '').trim(),
+  PAGE_ACCESS_TOKEN: (process.env.PAGE_ACCESS_TOKEN || '').trim(),
+  PAGE_ID: (process.env.PAGE_ID || '').trim(),
   // Token Meta repeats back during the webhook handshake (we invent it ourselves).
-  VERIFY_TOKEN: process.env.VERIFY_TOKEN || '',
+  VERIFY_TOKEN: (process.env.VERIFY_TOKEN || '').trim(),
 
   // Page Inbox app id — passing thread control here gives the conversation
   // to a human in Meta Business Suite instead of a bot.
@@ -65,7 +65,7 @@ module.exports = {
   // Dev helpers: no token yet? keep the bot fully testable.
   DRY_RUN: String(process.env.DRY_RUN || '').toLowerCase() === '1',
   // Guard for POST /api/simulate (leave empty to disable the route).
-  SIMULATE_TOKEN: process.env.SIMULATE_TOKEN || '',
+  SIMULATE_TOKEN: (process.env.SIMULATE_TOKEN || '').trim(),
 
   DATA_DIR: path.join(__dirname, '..', 'data'),
   PAGES_DIR: path.join(__dirname, '..', 'data', 'pages'),

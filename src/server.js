@@ -16,6 +16,7 @@ const http = require('http')
 const cfg = require('./config')
 const messenger = require('./messenger')
 const knowledge = require('./knowledge')
+const brain = require('./brain')
 const sessions = require('./session')
 const pages = require('./pages')
 
@@ -222,6 +223,35 @@ async function router(req, res) {
     })
   }
 
+  // ------------------------------------------------- brain self-diagnosis
+  // GET /api/diag?token=<SIMULATE_TOKEN> → one tiny Gemini call and the raw outcome.
+  if (path === '/api/diag' && req.method === 'GET') {
+    if (!cfg.SIMULATE_TOKEN || String(query.token || '') !== cfg.SIMULATE_TOKEN) {
+      return json(res, 401, { error: 'bad token' })
+    }
+    const key = cfg.GEMINI_API_KEY || ''
+    const info = {
+      keyPresent: Boolean(key),
+      keyLength: key.length,
+      keyStart: key.slice(0, 8),
+      keyEnd: key.slice(-4),
+      model: cfg.GEMINI_MODEL,
+      fallbacks: cfg.GEMINI_MODEL_FALLBACKS,
+    }
+    const started = Date.now()
+    const reply = await brain.chat({ history: [], userText: 'Réponds uniquement par le mot: OK', lang: 'fr' })
+    const status = brain.status()
+    const failed = !reply || /pause technique|technical break|adore vos questions/i.test(String(reply))
+    return json(res, 200, {
+      ok: !failed,
+      ms: Date.now() - started,
+      reply: String(reply || '').slice(0, 200),
+      workingModel: status.workingModel || null,
+      lastError: status.lastError || null,
+      ...info,
+    })
+  }
+
   // -------------------------------------------------------------- monitoring
   if (path === '/ping' && req.method === 'GET') {
     return send(res, 200, `ok ${Date.now()}`)
@@ -241,6 +271,7 @@ async function router(req, res) {
       uptimeSec: Math.round((Date.now() - STARTED_AT) / 1000),
       brain: cfg.GEMINI_MODEL,
       pages: knowledge.status().pageCount,
+      brainStatus: brain.status(),
       sessions: sessions.stats ? sessions.stats() : undefined,
       graph: `${cfg.GRAPH_BASE}/${cfg.GRAPH_VERSION}`,
       ready: ready(),
